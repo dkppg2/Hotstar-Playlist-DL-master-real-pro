@@ -1,0 +1,51 @@
+version: '3.1'
+
+services:
+  socat:
+    image: bennythink/socat
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    entrypoint: [ "socat", "tcp-listen:2375,fork,reuseaddr","unix-connect:/var/run/docker.sock" ]
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    logging:
+      driver: none
+
+  mysql:
+    image: ubuntu/mysql:8.0-22.04_beta
+    restart: always
+    volumes:
+      - ./db_data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: 'root'
+    logging:
+      driver: none
+
+  ytdl:
+    image: bennythink/ytdlbot
+    env_file:
+      - env/ytdl.env
+    restart: always
+    depends_on:
+      - socat
+      - redis
+    volumes:
+      - ./data/instagram.com_cookies.txt:/ytdlbot/ytdlbot/instagram.com_cookies.txt
+      - ./data/vnstat/:/var/lib/vnstat/
+
+  flower:
+    image: bennythink/ytdlbot
+    env_file:
+      - env/ytdl.env
+    restart: on-failure
+    command: [ "/usr/local/bin/celery",
+               "-A", "flower_tasks", "flower",
+               "--basic_auth=benny:123456",
+               "--address=0.0.0.0", "--persistent","--purge_offline_workers=3600" ]
+    volumes:
+      - ./data/flower:/ytdlbot/ytdlbot/flower
+    ports:
+      - "5555:5555"

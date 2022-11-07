@@ -47,9 +47,7 @@ def get_user_settings(user_id: "str") -> "tuple":
     cur = db.cur
     cur.execute("SELECT * FROM settings WHERE user_id = %s", (user_id,))
     data = cur.fetchone()
-    if data is None:
-        return 100, "high", "video", "Celery"
-    return data
+    return (100, "high", "video", "Celery") if data is None else data
 
 
 def set_user_settings(user_id: int, field: "str", value: "str"):
@@ -84,9 +82,9 @@ def adjust_formats(user_id: "str", url: "str", formats: "list", hijack=None):
         formats.insert(0, hijack)
         return
 
-    mapping = {"high": [], "medium": [480], "low": [240, 360]}
     settings = get_user_settings(user_id)
     if settings and is_youtube(url):
+        mapping = {"high": [], "medium": [480], "low": [240, 360]}
         for m in mapping.get(settings[1], []):
             formats.insert(0, f"bestvideo[ext=mp4][height={m}]+bestaudio[ext=m4a]")
             formats.insert(1, f"bestvideo[vcodec^=avc][height={m}]+bestaudio[acodec^=mp4a]/best[vcodec^=avc]/best")

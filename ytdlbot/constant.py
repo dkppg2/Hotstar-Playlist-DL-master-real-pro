@@ -99,9 +99,7 @@ Sending format: **{1}**
             return ""
         used, total, ttl = self.return_remaining_quota(chat_id)
         refresh_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(ttl + time.time()))
-        caption = f"Remaining quota: **{sizeof_fmt(used)}/{sizeof_fmt(total)}**, " \
-                  f"refresh at {refresh_time}\n"
-        return caption
+        return f"Remaining quota: **{sizeof_fmt(used)}/{sizeof_fmt(total)}**, refresh at {refresh_time}\n"
 
     @staticmethod
     def return_remaining_quota(chat_id):
@@ -112,8 +110,7 @@ Sending format: **{1}**
     def get_vip_greeting(chat_id):
         if not ENABLE_VIP:
             return ""
-        v = VIP().check_vip(chat_id)
-        if v:
+        if v := VIP().check_vip(chat_id):
             return f"Hello {v[1]}, VIP{v[-2]}☺️\n\n"
         else:
             return ""
@@ -121,12 +118,7 @@ Sending format: **{1}**
     @staticmethod
     def get_receive_link_text():
         reserved = get_func_queue("reserved")
-        if ENABLE_CELERY and reserved:
-            text = f"Too many tasks. Your tasks was added to the reserved queue {reserved}."
-        else:
-            text = "Your task was added to active queue.\nProcessing...\n\n"
-
-        return text
+        return f"Too many tasks. Your tasks was added to the reserved queue {reserved}." if ENABLE_CELERY and reserved else "Your task was added to active queue.\nProcessing...\n\n"
 
     @staticmethod
     def ping_worker():
@@ -136,7 +128,7 @@ Sending format: **{1}**
         response = celery_app.control.broadcast("ping_revision", reply=True)
         revision = {}
         for item in response:
-            revision.update(item)
+            revision |= item
 
         text = ""
         for worker in workers:
@@ -144,7 +136,7 @@ Sending format: **{1}**
             hostname = worker["tags"]["hostname"]
             status = {True: "✅"}.get(fields["status"], "❌")
             active = fields["active"]
-            load = "{},{},{}".format(fields["load1"], fields["load5"], fields["load15"])
+            load = f'{fields["load1"]},{fields["load5"]},{fields["load15"]}'
             rev = revision.get(hostname, "")
             text += f"{status}{hostname} **{active}** {load} {rev}\n"
 

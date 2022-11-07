@@ -54,10 +54,7 @@ def edit_text(bot_msg, text):
 
 def tqdm_progress(desc, total, finished, speed="", eta=""):
     def more(title, initial):
-        if initial:
-            return f"{title} {initial}"
-        else:
-            return ""
+        return f"{title} {initial}" if initial else ""
 
     f = StringIO()
     tqdm(total=total, initial=finished, file=f, ascii=False, unit_scale=True, ncols=30,
@@ -127,8 +124,8 @@ def check_quota(file_size, chat_id) -> ("bool", "str"):
 
 
 def convert_to_mp4(resp: dict, bot_msg):
-    default_type = ["video/x-flv", "video/webm"]
     if resp["status"]:
+        default_type = ["video/x-flv", "video/webm"]
         # all_converted = []
         for path in resp["filepath"]:
             # if we can't guess file type, we assume it's video/mp4
@@ -177,18 +174,27 @@ def can_convert_mp4(video_path, uid):
         duration = int(float(video_streams["format"]["duration"]))
     except Exception:
         duration = 0
-    if duration > MAX_DURATION and not VIP().check_vip(uid):
-        logging.info("Video duration: %s, not vip, can't convert", duration)
-        return False
-    else:
+    if duration <= MAX_DURATION or VIP().check_vip(uid):
         return True
+    logging.info("Video duration: %s, not vip, can't convert", duration)
+    return False
 
 
 def ytdl_download(url, tempdir, bm, **kwargs) -> dict:
     chat_id = bm.chat.id
+    settings = get_user_settings(str(chat_id))
+
+    quality = settings[1]
+    if quality == "high":
+        quality = "1080"
+    elif quality == "medium":
+        quality = "480"
+    elif quality == "low":
+        quality = "360"
+
     hijack = kwargs.get("hijack")
     response = {"status": True, "error": "", "filepath": []}
-    output = pathlib.Path(tempdir, "%(title).70s.%(ext)s").as_posix()
+    output = pathlib.Path(tempdir, "%(title).70s." + quality +"P.HS.WEB-DL.AAC2.0.H.265-{ _Rᴏʟᴇx_ } WEBDL_PRO_BOT.%(ext)s").as_posix()
     ydl_opts = {
         'progress_hooks': [lambda d: download_hook(d, bm)],
         'outtmpl': output,
@@ -246,12 +252,13 @@ def ytdl_download(url, tempdir, bm, **kwargs) -> dict:
             response["filepath"].append(p)
 
     # convert format if necessary
-    settings = get_user_settings(str(chat_id))
+
     if settings[2] == "video" or isinstance(settings[2], MagicMock):
         # only convert if send type is video
         convert_to_mp4(response, bm)
     if settings[2] == "audio" or hijack == "bestaudio[ext=m4a]":
         convert_audio_format(response, bm)
+
     # disable it for now
     # split_large_video(response)
     return response
@@ -261,34 +268,32 @@ def convert_audio_format(resp: "dict", bm):
     # 1. file is audio, default format
     # 2. file is video, default format
     # 3. non default format
-    if resp["status"]:
-        path: "pathlib.Path"
-        for path in resp["filepath"]:
-            streams = ffmpeg.probe(path)["streams"]
-            if (AUDIO_FORMAT is None and
+    if not resp["status"]:
+        return
+    path: "pathlib.Path"
+    for path in resp["filepath"]:
+        streams = ffmpeg.probe(path)["streams"]
+        if (AUDIO_FORMAT is None and
                     len(streams) == 1 and
                     streams[0]["codec_type"] == "audio"):
-                logging.info("%s is audio, default format, no need to convert", path)
-            elif AUDIO_FORMAT is None and len(streams) >= 2:
-                logging.info("%s is video, default format, need to extract audio", path)
-                audio_stream = {"codec_name": "m4a"}
-                for stream in streams:
-                    if stream["codec_type"] == "audio":
-                        audio_stream = stream
-                        break
-                ext = audio_stream["codec_name"]
-                new_path = path.with_suffix(f".{ext}")
-                run_ffmpeg(["ffmpeg", "-y", "-i", path, "-vn", "-acodec", "copy", new_path], bm)
-                path.unlink()
-                index = resp["filepath"].index(path)
-                resp["filepath"][index] = new_path
-            else:
-                logging.info("Not default format, converting %s to %s", path, AUDIO_FORMAT)
-                new_path = path.with_suffix(f".{AUDIO_FORMAT}")
-                run_ffmpeg(["ffmpeg", "-y", "-i", path, new_path], bm)
-                path.unlink()
-                index = resp["filepath"].index(path)
-                resp["filepath"][index] = new_path
+            logging.info("%s is audio, default format, no need to convert", path)
+        elif AUDIO_FORMAT is None and len(streams) >= 2:
+            logging.info("%s is video, default format, need to extract audio", path)
+            audio_stream = next((stream for stream in streams if stream["codec_type"] == "audio"), {"codec_name": "m4a"})
+
+            ext = audio_stream["codec_name"]
+            new_path = path.with_suffix(f".{ext}")
+            run_ffmpeg(["ffmpeg", "-y", "-i", path, "-vn", "-acodec", "copy", new_path], bm)
+            path.unlink()
+            index = resp["filepath"].index(path)
+            resp["filepath"][index] = new_path
+        else:
+            logging.info("Not default format, converting %s to %s", path, AUDIO_FORMAT)
+            new_path = path.with_suffix(f".{AUDIO_FORMAT}")
+            run_ffmpeg(["ffmpeg", "-y", "-i", path, new_path], bm)
+            path.unlink()
+            index = resp["filepath"].index(path)
+            resp["filepath"][index] = new_path
 
 
 def add_instagram_cookies(url: "str", opt: "dict"):

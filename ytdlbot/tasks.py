@@ -121,7 +121,7 @@ def forward_video(url, client, bot_msg):
             vip.use_quota(chat_id, file_size)
         caption, _ = gen_cap(bot_msg, url, obj)
         res_msg.edit_text(caption, reply_markup=gen_video_markup())
-        bot_msg.edit_text(f"Download success!✅✅✅")
+        bot_msg.edit_text("Download success!✅✅✅")
         red.update_metrics("cache_hit")
         return True
 
@@ -226,8 +226,7 @@ def normal_audio(bot_msg, client):
 
 
 def get_dl_source():
-    worker_name = os.getenv("WORKER_NAME")
-    if worker_name:
+    if worker_name := os.getenv("WORKER_NAME"):
         return f"Downloaded by  {worker_name}"
     return ""
 
@@ -264,7 +263,7 @@ def ytdl_normal_download(bot_msg, client, url):
                 client.send_message(chat_id, upload_transfer_sh(bot_msg, video_paths))
                 return
             upload_processor(client, bot_msg, url, video_path)
-        bot_msg.edit_text('Download success!✅')
+        bot_msg.delete()
     else:
         client.send_chat_action(chat_id, 'typing')
         tb = result["error"][:4000]
@@ -276,11 +275,11 @@ def ytdl_normal_download(bot_msg, client, url):
 def upload_processor(client, bot_msg, url, vp_or_fid: "typing.Any[str, pathlib.Path]"):
     chat_id = bot_msg.chat.id
     red = Redis()
-    markup = gen_video_markup()
+    markup = gen_video_markup(url)
     cap, meta = gen_cap(bot_msg, url, vp_or_fid)
 
     download_location = f"{thumb_location}/{chat_id}.jpg"
-    print(download_location)
+
     meta["thumb"] = download_location if os.path.isfile(download_location) else meta["thumb"]
 
     settings = get_user_settings(str(chat_id))
@@ -355,23 +354,11 @@ def gen_cap(bm, url, video_path):
         )
     remain = bot_text.remaining_quota_caption(chat_id)
     worker = get_dl_source()
-    cap = f"{user_info}\n`{file_name}`\n\n{url}\n\nInfo: {meta['width']}x{meta['height']} {file_size}\t" \
-          f"{meta['duration']}s\n{remain}\n{worker}\n{bot_text.custom_text}"
+    cap = f"**{file_name}\n{bot_text.custom_text}**"
     return cap, meta
 
-
-def gen_video_markup():
-    markup = InlineKeyboardMarkup(
-        [
-            [  # First row
-                InlineKeyboardButton(  # Generates a callback query when pressed
-                    "convert to audio",
-                    callback_data="convert"
-                )
-            ]
-        ]
-    )
-    return markup
+def gen_video_markup(url):
+    return InlineKeyboardMarkup([[InlineKeyboardButton("Convert to Audio", callback_data="convert"), InlineKeyboardButton("URL", url=url)]])  # First row  # Generates a callback query when pressed
 
 
 @Panel.register
@@ -388,11 +375,11 @@ def hot_patch(*args):
     pip_install = "pip install -r requirements.txt"
     unset = "git config --unset http.https://github.com/.extraheader"
     pull_unshallow = "git pull origin --unshallow"
-    pull = "git pull"
-
     subprocess.call(unset, shell=True, cwd=app_path)
     if subprocess.call(pull_unshallow, shell=True, cwd=app_path) != 0:
         logging.info("Already unshallow, pulling now...")
+        pull = "git pull"
+
         subprocess.call(pull, shell=True, cwd=app_path)
 
     logging.info("Code is updated, applying hot patch now...")
@@ -410,7 +397,8 @@ def async_task(task_name, *args):
     inspect = app.control.inspect()
     worker_stats = inspect.stats()
     route_queues = []
-    padding = math.ceil(sum([i['pool']['max-concurrency'] for i in worker_stats.values()]) / len(worker_stats))
+    padding = math.ceil(sum(i['pool']['max-concurrency'] for i in worker_stats.values()) / len(worker_stats))
+
     for worker_name, stats in worker_stats.items():
         route = worker_name.split('@')[1]
         concurrency = stats['pool']['max-concurrency']

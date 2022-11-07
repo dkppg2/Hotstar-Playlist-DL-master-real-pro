@@ -7,6 +7,7 @@
 
 __author__ = "Benny <benny.think@gmail.com>"
 
+import asyncio
 import contextlib
 import logging
 import os
@@ -49,7 +50,7 @@ logging.info("Authorized users are %s", AUTHORIZED_USER)
 
 class temp(object):
     IS_RUNNING = False
-    CANCELLED = False
+    CANCELLED = {}
 
 
 thumb_location = f"{os.path.dirname(os.path.abspath(__file__))}/{THUMBNAIL_LOCATION}"
@@ -307,13 +308,10 @@ def playlist_handler(client: "Client", message: "types.Message"):
         message.reply("/playlist hotstar_link") 
     if len(cmd) == 2:
         try:
-            if temp.IS_RUNNING:
-                return message.reply_text("Already a process is running", quote=True)
-
             link = cmd[1]
             shell_cmd = f"yt-dlp -j --flat-playlist {link} --user-agent 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36' | jq -r .webpage_url"
             url_list = subprocess.run(shell_cmd, capture_output=True, shell=True)
-            temp.IS_RUNNING = True
+            temp.CANCELLED[message.from_user.id] = False
             url_list = url_list.stdout
             playlist_links = url_list.decode("utf-8").splitlines()
 
@@ -324,34 +322,36 @@ def playlist_handler(client: "Client", message: "types.Message"):
             
             playlist_links_len = len(playlist_links)
 
-            if playlist_links_len > 1:
-                message.reply_text("Multiple Links found")
-
             playlist_links = playlist_links[int(start)::]
             
+            editable = app.send_message(message.chat.id, "Processing playlist...", disable_web_page_preview=True)
             for i, link in enumerate(playlist_links):
-                txt = app.send_message(message.chat.id, f'Downloading {i+1 + int(start)} of {playlist_links_len}\n\n{link}')
-                main_video_dl(client, message, link)
+                editable.edit(f'Downloading {i+1 + int(start)} of {playlist_links_len}\n\n{link}', disable_web_page_preview=True)
+                try:
+                    main_video_dl(client, message, link)
+                except Exception as e:
+                    print(e)
+                    time.sleep(60)
 
-                if temp.CANCELLED:
-                    temp.IS_RUNNING = False
+                is_cancelled = temp.CANCELLED.get(message.from_user.id)
+
+                if is_cancelled:
                     break
 
         except Exception as e:
             print(e)
             app.send_message(message.chat.id, e)
         finally:
-            temp.CANCELLED = False
-            temp.IS_RUNNING = False
+            temp.CANCELLED[message.from_user.id] = False
             time.sleep(20)
-            app.send_message(message.chat.id, 'Task Completed')
+            editable.edit('Task Completed')
 
 
 @app.on_message(filters.command("cancel") & filters.incoming & filters.private)
 @private_use
 def cancel_task(bot, message):
-    temp.CANCELLED = True
-    message.reply("Your task has been cancelled")
+    temp.CANCELLED[message.from_user.id] = True
+    message.reply("Your task will be cancelled after current task is completed")
 
 
 @app.on_message(filters.photo & filters.incoming & filters.private)

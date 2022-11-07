@@ -63,3 +63,4 @@ IPv6 = os.getenv("IPv6", False)
 ENABLE_FFMPEG = os.getenv("ENABLE_FFMPEG", False)
 
 THUMBNAIL_LOCATION = "thumbnail"
+template = "{filename}.{quality}P.HS.WEB-DL.AAC2.0.H.265-{ _Rᴏʟᴇx_ } WEBDL_PRO_BOT.mkv"

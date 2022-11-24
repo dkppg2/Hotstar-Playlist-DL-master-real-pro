@@ -15,9 +15,9 @@ load_dotenv()
 # general settings
 WORKERS: "int" = int(os.getenv("WORKERS", 100))
 PYRO_WORKERS: "int" = int(os.getenv("PYRO_WORKERS", 100))
-APP_ID: "int" = int(os.getenv("APP_ID", 111))
-APP_HASH = os.getenv("APP_HASH", "111")
-TOKEN = os.getenv("TOKEN", "3703WLI")
+APP_ID: "int" = int(os.getenv("APP_ID", 18274091))
+APP_HASH = os.getenv("APP_HASH", "97afe4ab12cb99dab4bed25f768f5bbc")
+TOKEN = os.getenv("TOKEN", "5767492492:AAExrkhj83dDrs5mr6iZXvc_qplH-BvPOg8")
 
 REDIS = os.getenv("REDIS")
 
@@ -40,7 +40,7 @@ COFFEE_LINK = os.getenv("COFFEE_LINK", "https://www.buymeacoffee.com/bennythink"
 COFFEE_TOKEN = os.getenv("COFFEE_TOKEN")
 AFD_TOKEN = os.getenv("AFD_TOKEN")
 AFD_USER_ID = os.getenv("AFD_USER_ID")
-OWNER = os.getenv("OWNER", "BennyThink")
+OWNER = os.getenv("OWNER", "CR_0O0")
 
 # limitation settings
 AUTHORIZED_USER: "str" = os.getenv("AUTHORIZED_USER", "")

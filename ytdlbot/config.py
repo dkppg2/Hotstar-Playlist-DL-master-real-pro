@@ -40,16 +40,16 @@ COFFEE_LINK = os.getenv("COFFEE_LINK", "https://www.buymeacoffee.com/bennythink"
 COFFEE_TOKEN = os.getenv("COFFEE_TOKEN")
 AFD_TOKEN = os.getenv("AFD_TOKEN")
 AFD_USER_ID = os.getenv("AFD_USER_ID")
-OWNER = os.getenv("OWNER", "@CR_0O0")
+OWNER = os.getenv("OWNER", "2109516065")
 
 # limitation settings
-AUTHORIZED_USER: "str" = os.getenv("AUTHORIZED_USER", "@CR_0O0")
+AUTHORIZED_USER: "str" = os.getenv("AUTHORIZED_USER", "2109516065")
 # membership requires: the format could be username/chat_id of channel or group
-REQUIRED_MEMBERSHIP: "str" = os.getenv("REQUIRED_MEMBERSHIP", "@CR_0O0")
+REQUIRED_MEMBERSHIP: "str" = os.getenv("REQUIRED_MEMBERSHIP", "")
 
 # celery related
 ENABLE_CELERY = os.getenv("ENABLE_CELERY", False)
-ENABLE_QUEUE = os.getenv("ENABLE_QUEUE", True)
+ENABLE_QUEUE = os.getenv("ENABLE_QUEUE", False)
 BROKER = os.getenv("BROKER", f"redis://{REDIS}:6379/4")
 
 MYSQL_HOST = os.getenv("MYSQL_HOST")

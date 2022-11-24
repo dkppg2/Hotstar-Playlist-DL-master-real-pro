@@ -33,19 +33,19 @@ EX = os.getenv("EX", 24 * 3600)
 MULTIPLY = os.getenv("MULTIPLY", 5)  # VIP1 is 5*5-25G, VIP2 is 50G
 USD2CNY = os.getenv("USD2CNY", 6)  # $5 --> ¥30
 
-ENABLE_VIP = os.getenv("VIP", False)
+ENABLE_VIP = os.getenv("VIP", True)
 MAX_DURATION = int(os.getenv("MAX_DURATION", 60))
 AFD_LINK = os.getenv("AFD_LINK", "https://afdian.net/@BennyThink")
 COFFEE_LINK = os.getenv("COFFEE_LINK", "https://www.buymeacoffee.com/bennythink")
 COFFEE_TOKEN = os.getenv("COFFEE_TOKEN")
 AFD_TOKEN = os.getenv("AFD_TOKEN")
 AFD_USER_ID = os.getenv("AFD_USER_ID")
-OWNER = os.getenv("OWNER", "CR_0O0")
+OWNER = os.getenv("OWNER", "@CR_0O0")
 
 # limitation settings
-AUTHORIZED_USER: "str" = os.getenv("AUTHORIZED_USER", "1823957960")
+AUTHORIZED_USER: "str" = os.getenv("AUTHORIZED_USER", "@CR_0O0")
 # membership requires: the format could be username/chat_id of channel or group
-REQUIRED_MEMBERSHIP: "str" = os.getenv("REQUIRED_MEMBERSHIP", "")
+REQUIRED_MEMBERSHIP: "str" = os.getenv("REQUIRED_MEMBERSHIP", "@CR_0O0")
 
 # celery related
 ENABLE_CELERY = os.getenv("ENABLE_CELERY", False)

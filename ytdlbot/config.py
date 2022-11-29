@@ -45,7 +45,7 @@ OWNER = os.getenv("OWNER", "2109516065")
 # limitation settings
 AUTHORIZED_USER: "str" = os.getenv("AUTHORIZED_USER", "2109516065,1823957960,2083503061,1166625664")
 # membership requires: the format could be username/chat_id of channel or group
-REQUIRED_MEMBERSHIP: "str" = os.getenv("REQUIRED_MEMBERSHIP", "")
+REQUIRED_MEMBERSHIP: "str" = os.getenv("REQUIRED_MEMBERSHIP", False)
 
 # celery related
 ENABLE_CELERY = os.getenv("ENABLE_CELERY", False)
